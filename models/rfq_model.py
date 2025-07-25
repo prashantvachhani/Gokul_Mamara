@@ -10,13 +10,14 @@ class RFQ_live(db.Model):
     weight = db.Column(db.Float, nullable=False)  
     product_name = db.Column(db.String(250), nullable=False)
 
-    date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
+    date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc))
     branch_name = db.Column(db.String(100), nullable=False)
 
     rfq_start_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     rfq_end_date = db.Column(db.DateTime)
     lifting_start_date = db.Column(db.DateTime)
     lifting_end_date = db.Column(db.DateTime)
+    status = db.Column(db.String(255), nullable=False, default='upcoming')
 
     def RFQ_Data(self):
         return {
@@ -32,4 +33,5 @@ class RFQ_live(db.Model):
             "rfq_end_date": self.rfq_end_date.strftime('%Y-%m-%d %H:%M:%S') if self.rfq_end_date else None,
             "lifting_start_date": self.lifting_start_date.strftime('%Y-%m-%d %H:%M:%S') if self.lifting_start_date else None,
             "lifting_end_date": self.lifting_end_date.strftime('%Y-%m-%d %H:%M:%S') if self.lifting_end_date else None,
+            "status": self.status
         }
