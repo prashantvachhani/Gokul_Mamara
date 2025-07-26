@@ -90,26 +90,7 @@ def login():
 
 # ------------------ RFQ Routes ------------------
 
-# all rfq data fetching display route
-@app.route('/rfq', methods=['GET'])
-@jwt_required()
-def get_rfq():
-    rfqs = RFQ_live.query.all()
-    return jsonify([rfq.RFQ_Data() for rfq in rfqs])
-
-# single value fetch routing 
-@app.route('/rfq/<int:id>', methods=['GET'])
-@jwt_required()
-def get_rfq_by_id(id):
-    try:
-        rfq = RFQ_live.query.get_or_404(id)
-        return jsonify(rfq.RFQ_Data()), 200
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-
-
+# rfq data send Api
 @app.route('/rfq', methods=['POST'])
 @jwt_required()
 def create_rfq():
@@ -146,18 +127,33 @@ def create_rfq():
             lifting_end_date=lifting_end,
             status=dynamic_status
         )
-
         db.session.add(new_rfq)
         db.session.commit()
-
         return jsonify({
             'message': 'RFQ added successfully.',
             'rfq': new_rfq.RFQ_Data()
         }), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+    
+# all rfq data fetching display route
+@app.route('/rfq', methods=['GET'])
+@jwt_required()
+def get_rfq():
+    rfqs = RFQ_live.query.all()
+    return jsonify([rfq.RFQ_Data() for rfq in rfqs])
 
+# single value fetch routing 
+@app.route('/rfq/<int:id>', methods=['GET'])
+@jwt_required()
+def get_rfq_by_id(id):
+    try:
+        rfq = RFQ_live.query.get_or_404(id)
+        return jsonify(rfq.RFQ_Data()), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+# rfq data update Api
 @app.route('/rfq/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_rfq(id):
@@ -179,16 +175,13 @@ def update_rfq(id):
         rfq.status = data.get('status', rfq.status)
 
         db.session.commit()
-
         return jsonify({
             'message': 'RFQ updated successfully.',
             'rfq': rfq.RFQ_Data()
         }), 200
-
     except Exception as e:
         return jsonify({'error': str(e)}), 400
     
-
 # rfq delete api
 @app.route('/rfq/<int:id>', methods=['DELETE'])
 @jwt_required()
@@ -197,17 +190,13 @@ def delete_rfq(id):
         rfq = RFQ_live.query.get_or_404(id)
         db.session.delete(rfq)
         db.session.commit()
-
         return jsonify({
             'message': f'RFQ with ID {id} deleted successfully.'
         }), 200
-
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-    
 # send-price Api
-
 STATUS_MAP = {
     "Original": 0,
     "Confirmed": 1,
@@ -234,7 +223,6 @@ def add_live_rfq_price():
         if not live_rfq:
             return jsonify({'error': 'RFQ not found'}), 404
         
-
         # Create new RFQ price entry
         new_data = RFQ_PRICE(
             live_rfq_id=live_rfq.rfq_id,
@@ -243,22 +231,38 @@ def add_live_rfq_price():
             qty = data.get('qty') or live_rfq.qty,
             price = data.get('price') or live_rfq.price,
             status=status,
-            resion=data.get('resion', None), 
+            resion=data.get('resion') if status == STATUS_MAP.get("Rejected") else None,
             date = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
         )
-
         db.session.add(new_data)
         db.session.commit()
-
         return jsonify({
             'message': 'Live RFQ price added successfully.',
             'data': new_data.rfq_price_data()
         }), 201
-
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
 
-
+# Send price get api
+@app.route('/live-rfq-price', methods=['GET'])
+@jwt_required()
+def get_send_price():
+    try:
+        data = RFQ_PRICE.query.all()
+        return jsonify([priceee.rfq_price_data() for priceee in data])
+    except Exception as error:
+        return jsonify({'Error': str(error)})
+    
+# Price one value get api
+@app.route('/live-rfq-price/<int:id>', methods=['GET'])
+@jwt_required()
+def get_one_price(id):
+    try:
+        data = RFQ_PRICE.query.get_or_404(id)
+        return jsonify(data.rfq_price_data())
+    except Exception as error:
+        return jsonify({'Error': str(error)})
 
 # ------------------ Run App ------------------
 
